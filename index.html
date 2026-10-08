@@ -120,14 +120,15 @@ const VERSES = [
 ];
 const BEATS = ["arrive","verse","pray","gate"];
 const CHORDS = {
-  arrive: [130.81, 196, 261.63],
-  verse: [146.83, 220, 293.66],
-  pray: [174.61, 261.63, 349.23],
-  gate: [98, 146.83, 196]
+  arrive: [130.81, 164.81, 196, 261.63],
+  verse: [146.83, 174.61, 220, 293.66],
+  pray: [110, 164.81, 220, 261.63],
+  gate: [98, 146.83, 196, 246.94]
 };
 let soundOn = true;
 let audioCtx = null;
 let nodes = [];
+let pianoTimer = null;
 function playTone(id) {
   stopTone();
   if (!soundOn) return;
@@ -135,33 +136,39 @@ function playTone(id) {
   if (!AC) return;
   audioCtx = audioCtx || new AC();
   audioCtx.resume();
-  const master = audioCtx.createGain();
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = "lowpass";
-  filter.frequency.value = 900;
-  master.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-  master.gain.exponentialRampToValueAtTime(0.035, audioCtx.currentTime + 2.8);
-  master.connect(filter);
-  filter.connect(audioCtx.destination);
-  nodes = [master];
-  const stops = [1, 2, 3, 4, 6];
-  const levels = [0.7, 0.14, 0.05, 0.02, 0.01];
-  (CHORDS[id] || CHORDS.arrive).forEach(freq => {
-    stops.forEach((harm, i) => {
-      const osc = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      osc.type = i === 0 ? "sine" : "triangle";
-      osc.frequency.value = freq * harm;
-      osc.detune.value = (i - 2) * 4;
-      g.gain.value = levels[i];
-      osc.connect(g);
-      g.connect(master);
-      osc.start();
-      nodes.push(osc, g);
-    });
-  });
+  const notes = CHORDS[id] || CHORDS.arrive;
+  const strike = (freq, when, vel) => {
+    const osc = audioCtx.createOscillator();
+    const over = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = "triangle";
+    over.type = "sine";
+    osc.frequency.value = freq;
+    over.frequency.value = freq * 2;
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(vel, when + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 3.4);
+    osc.connect(g);
+    over.connect(g);
+    g.connect(audioCtx.destination);
+    osc.start(when);
+    over.start(when);
+    osc.stop(when + 3.6);
+    over.stop(when + 3.6);
+    nodes.push(osc, over, g);
+  };
+  let step = 0;
+  const loop = () => {
+    const now = audioCtx.currentTime;
+    strike(notes[step % notes.length], now, 0.018);
+    step += 1;
+    pianoTimer = setTimeout(loop, 2400);
+  };
+  loop();
 }
 function stopTone() {
+  if (pianoTimer) clearTimeout(pianoTimer);
+  pianoTimer = null;
   nodes.forEach(n => { try { n.stop && n.stop(); } catch (e) {} });
   nodes = [];
 }
