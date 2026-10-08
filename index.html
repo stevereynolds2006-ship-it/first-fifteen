@@ -120,10 +120,10 @@ const VERSES = [
 ];
 const BEATS = ["arrive","verse","pray","gate"];
 const CHORDS = {
-  arrive: [130.81, 164.81, 196, 261.63],
-  verse: [146.83, 174.61, 220, 293.66],
-  pray: [110, 164.81, 220, 261.63],
-  gate: [98, 146.83, 196, 246.94]
+  arrive: [[130.81, 164.81, 196, 261.63], [146.83, 174.61, 220, 293.66]],
+  verse: [[174.61, 220, 261.63, 329.63], [164.81, 196, 246.94, 329.63]],
+  pray: [[110, 164.81, 220, 261.63], [130.81, 164.81, 196, 261.63]],
+  gate: [[98, 146.83, 196, 246.94], [110, 164.81, 220, 261.63]]
 };
 let soundOn = true;
 let audioCtx = null;
@@ -136,33 +136,30 @@ function playTone(id) {
   if (!AC) return;
   audioCtx = audioCtx || new AC();
   audioCtx.resume();
-  const notes = CHORDS[id] || CHORDS.arrive;
-  const strike = (freq, when, vel) => {
-    const osc = audioCtx.createOscillator();
-    const over = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.type = "triangle";
-    over.type = "sine";
-    osc.frequency.value = freq;
-    over.frequency.value = freq * 2;
-    g.gain.setValueAtTime(0.0001, when);
-    g.gain.exponentialRampToValueAtTime(vel, when + 0.03);
-    g.gain.exponentialRampToValueAtTime(0.0001, when + 3.4);
-    osc.connect(g);
-    over.connect(g);
-    g.connect(audioCtx.destination);
-    osc.start(when);
-    over.start(when);
-    osc.stop(when + 3.6);
-    over.stop(when + 3.6);
-    nodes.push(osc, over, g);
+  const chords = CHORDS[id] || CHORDS.arrive;
+  const hammer = (freq, when) => {
+    [1, 2, 3, 4].forEach((harm, i) => {
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = harm === 1 ? "triangle" : "sine";
+      osc.frequency.value = freq * harm;
+      const peak = 0.03 / harm;
+      g.gain.setValueAtTime(0.0001, when);
+      g.gain.exponentialRampToValueAtTime(peak, when + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + 4.2);
+      osc.connect(g);
+      g.connect(audioCtx.destination);
+      osc.start(when);
+      osc.stop(when + 4.4);
+      nodes.push(osc, g);
+    });
   };
   let step = 0;
   const loop = () => {
-    const now = audioCtx.currentTime;
-    strike(notes[step % notes.length], now, 0.018);
+    const now = audioCtx.currentTime + 0.02;
+    chords[step % chords.length].forEach(freq => hammer(freq, now));
     step += 1;
-    pianoTimer = setTimeout(loop, 2400);
+    pianoTimer = setTimeout(loop, 5200);
   };
   loop();
 }
