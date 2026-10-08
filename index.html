@@ -120,10 +120,10 @@ const VERSES = [
 ];
 const BEATS = ["arrive","verse","pray","gate"];
 const CHORDS = {
-  arrive: [196, 293.66, 392],
-  verse: [174.61, 261.63, 329.63],
-  pray: [220, 329.63, 440],
-  gate: [146.83, 220, 349.23]
+  arrive: [130.81, 196, 261.63],
+  verse: [146.83, 220, 293.66],
+  pray: [174.61, 261.63, 349.23],
+  gate: [98, 146.83, 196]
 };
 let soundOn = true;
 let audioCtx = null;
@@ -136,18 +136,29 @@ function playTone(id) {
   audioCtx = audioCtx || new AC();
   audioCtx.resume();
   const master = audioCtx.createGain();
-  master.gain.value = 0.08;
-  master.connect(audioCtx.destination);
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = 1800;
+  master.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+  master.gain.exponentialRampToValueAtTime(0.12, audioCtx.currentTime + 1.4);
+  master.connect(filter);
+  filter.connect(audioCtx.destination);
   nodes = [master];
-  (CHORDS[id] || CHORDS.arrive).forEach((freq, i) => {
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = freq;
-    g.gain.value = 0.5 - i * 0.12;
-    osc.connect(g); g.connect(master);
-    osc.start();
-    nodes.push(osc, g);
+  const stops = [1, 2, 3, 4, 6];
+  const levels = [0.55, 0.28, 0.16, 0.08, 0.04];
+  (CHORDS[id] || CHORDS.arrive).forEach(freq => {
+    stops.forEach((harm, i) => {
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = i === 0 ? "sine" : "triangle";
+      osc.frequency.value = freq * harm;
+      osc.detune.value = (i - 2) * 4;
+      g.gain.value = levels[i];
+      osc.connect(g);
+      g.connect(master);
+      osc.start();
+      nodes.push(osc, g);
+    });
   });
 }
 function stopTone() {
