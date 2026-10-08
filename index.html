@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#141311" />
+<title>First Fifteen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,640&family=Outfit:wght@360;480;580&display=swap" rel="stylesheet" />
+<style>
+  :root { --bg:#141311; --bg2:#1c1a17; --ink:#f4efe6; --muted:#a79d90; --line:rgba(244,239,230,.12); --amber:#e7a15a; --amber2:#ffd7a8; --paper:#f3ecdf; --paperink:#231c14; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:#0c0b0a; color:var(--ink); font-family:Outfit, sans-serif; }
+  body { display:flex; justify-content:center; }
+  button, textarea { font-family:inherit; }
+  #phone { width:min(430px,100vw); min-height:100%; background:radial-gradient(900px 420px at 50% -10%, rgba(231,161,90,.16), transparent 55%), var(--bg); display:flex; flex-direction:column; }
+  header.top { padding:22px 22px 8px; display:flex; align-items:center; justify-content:space-between; }
+  .mark { display:flex; gap:10px; align-items:center; letter-spacing:.14em; font-size:12px; text-transform:uppercase; color:var(--amber2); }
+  .gate { width:22px; height:16px; border:1.6px solid var(--amber); border-bottom:0; position:relative; }
+  .gate:before { content:""; position:absolute; left:4px; right:4px; top:-5px; height:2px; background:var(--amber); box-shadow:0 0 8px var(--amber); }
+  .iconbtn { background:transparent; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+  main { flex:1; padding:8px 22px 28px; }
+  h1 { font-family:Fraunces, serif; font-weight:520; font-size:44px; line-height:.92; letter-spacing:-1.1px; margin:18px 0 10px; }
+  .lede { color:var(--muted); font-size:16px; line-height:1.45; max-width:36ch; margin:0 0 22px; }
+  .shifts { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .shift { text-align:left; background:var(--bg2); color:var(--ink); border:1px solid var(--line); border-radius:16px; padding:14px; }
+  .shift.on { border-color:var(--amber); background:#241c14; }
+  .shift b { display:block; font-weight:580; font-size:15px; }
+  .shift span { color:var(--muted); font-size:12px; }
+  .primary, .ghost { width:100%; border:0; border-radius:16px; padding:16px 18px; font-size:16px; font-weight:580; margin-top:16px; }
+  .primary { background:var(--amber); color:#24180d; }
+  .ghost { background:transparent; color:var(--ink); border:1px solid var(--line); }
+  .row { display:flex; justify-content:space-between; align-items:baseline; margin-top:26px; }
+  .row h2 { font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:480; margin:0; }
+  .week { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:10px; }
+  .day { aspect-ratio:1; border-radius:12px; border:1px solid var(--line); display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px; font-size:11px; color:var(--muted); background:#191714; }
+  .day.hit { background:#3a2a18; color:var(--amber2); border-color:transparent; }
+  .card { background:var(--paper); color:var(--paperink); border-radius:22px; padding:22px 20px 18px; }
+  .card .ref { letter-spacing:.14em; text-transform:uppercase; font-size:11px; color:#8a6240; }
+  .card p.verse { font-family:Fraunces, serif; font-size:26px; line-height:1.18; margin:14px 0 8px; }
+  .ask { color:#6d6256; font-size:15px; }
+  .progress { display:flex; gap:6px; margin:8px 0 16px; }
+  .progress i { flex:1; height:3px; background:var(--line); border-radius:99px; display:block; }
+  .progress i.on { background:var(--amber); }
+  .timer { font-variant-numeric:tabular-nums; font-size:13px; letter-spacing:.12em; color:var(--amber2); }
+  textarea { width:100%; min-height:110px; border-radius:16px; border:1px solid var(--line); background:#100f0d; color:var(--ink); padding:14px; font-size:16px; }
+  .prayer li { margin:10px 0; line-height:1.4; }
+  .done-mark { font-family:Fraunces, serif; font-size:40px; line-height:1; margin:12px 0; }
+  .fine { color:var(--muted); font-size:13px; line-height:1.45; }
+  .doors { display:grid; gap:10px; }
+</style>
+</head>
+<body>
+<audio id="bed" loop preload="none"></audio>
+<div id="phone">
+  <header class="top">
+    <div class="mark"><span class="gate"></span> First Fifteen</div>
+    <button class="iconbtn" id="modeBtn" type="button">Practice</button>
+    <button class="iconbtn" id="soundBtn" type="button">Sound on</button>
+  </header>
+  <main id="app"></main>
+</div>
+<script>
+const DOORS = {
+  work: {
+    label: "The gate",
+    who: "Shift",
+    homeTitle: "Before you clock in.",
+    homeLede: "Pick the turn. Then give it fifteen quiet minutes.",
+    start: "Start the fifteen",
+    turns: [
+      { id:"days", name:"Days", when:"Before 6" },
+      { id:"swings", name:"Afternoons", when:"Before 2" },
+      { id:"nights", name:"Nights", when:"Before 10" },
+      { id:"ot", name:"Overtime", when:"Extra turn" }
+    ],
+    arriveTitle: "You are here. The floor can wait.",
+    arrive: "Name the shift. Days, nights, or the extra turn. You do not have to feel ready.",
+    ask: "What is in your hands on this shift?",
+    pray: ["Thank him for the work, even if you are tired of it.","Name one person at home.","Ask that the work of your hands would hold.","Put the shift under him, not under your mood."],
+    prayer: "Lord, I am about to clock in. Take this shift. Steady my hands and my temper. I leave the people I love with you, and I ask that the work in front of me would hold. I am yours before I am the job. Amen.",
+    leaveTitle: "Leave it at the gate.",
+    leave: "One sentence you will not carry onto the floor.",
+    placeholder: "The argument. The worry. The number in your head.",
+    finish: "Clock in",
+    done: "The gate is behind you.",
+    doneLede: "Fifteen minutes kept. Go do the work in front of you."
+  },
+  teen: {
+    label: "The door",
+    who: "Teen",
+    homeTitle: "Before you go in.",
+    homeLede: "School, practice, a job, or bed. Fifteen quiet minutes, then you walk through.",
+    start: "Start the fifteen",
+    turns: [
+      { id:"school", name:"School", when:"Before the bell" },
+      { id:"practice", name:"Practice", when:"Before you play" },
+      { id:"job", name:"Work", when:"Before the shift" },
+      { id:"bed", name:"Bed", when:"Before you sleep" }
+    ],
+    arriveTitle: "You are here. The day can wait.",
+    arrive: "Name the door. School, practice, work, or bed. You do not have to feel ready.",
+    ask: "What is in front of you on the other side of this door?",
+    pray: ["Thank him for today, even if it already feels heavy.","Name one person at home.","Ask for a clear head and a steady heart.","Put the next hour under him, not under the group chat."],
+    prayer: "Lord, I am about to walk in. Quiet what is loud in me. Give me a clear head and a steady heart for the next hour. Help me be kind to the person next to me, and keep the people at home. I am yours before I am the room. Amen.",
+    leaveTitle: "Leave it at the door.",
+    leave: "One sentence you will not carry in with you.",
+    placeholder: "The comment. The grade. The thing you keep replaying.",
+    finish: "Go in",
+    done: "The door is behind you.",
+    doneLede: "Fifteen minutes kept. Walk in and do the next thing heartily."
+  }
+};
+const VERSES = [
+  { ref:"Colossians 3:23", text:"And whatsoever ye do, do it heartily, as to the Lord, and not unto men." },
+  { ref:"Psalm 90:17", text:"Let the beauty of the Lord our God be upon us: and establish thou the work of our hands upon us." },
+  { ref:"Proverbs 16:3", text:"Commit thy works unto the Lord, and thy thoughts shall be established." },
+  { ref:"James 4:8", text:"Draw nigh to God, and he will draw nigh to you." }
+];
+const BEATS = ["arrive","verse","pray","gate"];
+const CHORDS = {
+  arrive: [196, 293.66, 392],
+  verse: [174.61, 261.63, 329.63],
+  pray: [220, 329.63, 440],
+  gate: [146.83, 220, 349.23]
+};
+let soundOn = true;
+let audioCtx = null;
+let nodes = [];
+function playTone(id) {
+  stopTone();
+  if (!soundOn) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  audioCtx = audioCtx || new AC();
+  audioCtx.resume();
+  const master = audioCtx.createGain();
+  master.gain.value = 0.08;
+  master.connect(audioCtx.destination);
+  nodes = [master];
+  (CHORDS[id] || CHORDS.arrive).forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    g.gain.value = 0.5 - i * 0.12;
+    osc.connect(g); g.connect(master);
+    osc.start();
+    nodes.push(osc, g);
+  });
+}
+function stopTone() {
+  nodes.forEach(n => { try { n.stop && n.stop(); } catch (e) {} });
+  nodes = [];
+}
+const state = { door:"work", turn:"nights", hits:{} };
+let screen = "welcome", beat = 0;
+function door(){ return DOORS[state.door]; }
+function $(html){ document.getElementById("app").innerHTML = html; bind(); }
+function bind(){
+  document.querySelectorAll("[data-go]").forEach(el => el.onclick = () => go(el.dataset.go));
+  document.querySelectorAll("[data-door]").forEach(el => el.onclick = () => { state.door = el.dataset.door; state.turn = door().turns[0].id; go("home"); });
+  document.querySelectorAll("[data-turn]").forEach(el => el.onclick = () => { state.turn = el.dataset.turn; render(); });
+  const finish = document.getElementById("finish");
+  if (finish) finish.onclick = () => { stopTone(); screen = "done"; render(); };
+  const next = document.getElementById("nextBeat");
+  if (next) next.onclick = () => { beat++; playTone(BEATS[beat] || "gate"); renderSession(); };
+  const swap = document.getElementById("swap");
+  if (swap) swap.onclick = () => { screen = "welcome"; render(); };
+}
+function go(name){ screen = name; if (name==="session") { beat = 0; playTone("arrive"); } else if (name!=="session") stopTone(); render(); }
+function verse(){ return VERSES[new Date().getDate() % VERSES.length]; }
+function weekCells(){ return ["S","M","T","W","T","F","S"].map((lab,i)=>`<div class="day ${i===4?"hit":""}">${lab}</div>`).join(""); }
+function render(){
+  if (screen==="welcome") return welcome();
+  if (screen==="home") return home();
+  if (screen==="session") return renderSession();
+  if (screen==="done") return done();
+}
+function welcome(){
+  $(`<h1>Fifteen minutes before you go in.</h1>
+    <p class="lede">Same ritual. Two doors. A shift worker clocks in. A teenager walks into school, practice, work, or bed.</p>
+    <div class="doors">
+      <button class="shift" data-door="work"><b>I’m clocking in</b><span>Days, nights, overtime</span></button>
+      <button class="shift" data-door="teen"><b>I’m a teenager</b><span>School, practice, work, bed</span></button>
+    </div>
+    <p class="fine" style="margin-top:18px">Quiet original tones play once you start. Sound on is in the corner. Nothing is streamed.</p>`);
+}
+function home(){
+  const d = door();
+  const v = verse();
+  $(`<h1>${d.homeTitle}</h1>
+    <p class="lede">${d.homeLede}</p>
+    <div class="shifts">${d.turns.map(s=>`<button class="shift ${state.turn===s.id?"on":""}" data-turn="${s.id}"><b>${s.name}</b><span>${s.when}</span></button>`).join("")}</div>
+    <button class="primary" data-go="session">${d.start}</button>
+    <div class="row"><h2>This week</h2><span class="fine">${d.who}</span></div>
+    <div class="week">${weekCells()}</div>
+    <div class="row"><h2>Today’s verse</h2></div>
+    <p class="fine" style="margin-top:8px">${v.ref}</p>
+    <button class="ghost" id="swap">Switch door</button>`);
+}
+function renderSession(){
+  if (beat>=BEATS.length){ screen="done"; return done(); }
+  const d = door();
+  const v = verse();
+  const id = BEATS[beat];
+  const bars = BEATS.map((x,i)=>`<i class="${i<=beat?"on":""}"></i>`).join("");
+  const labels = {arrive:"Arrive", verse:"Verse", pray:"Pray", gate:d.label};
+  let body = "";
+  if (id==="arrive") body = `<h1>${d.arriveTitle}</h1><p class="lede">${d.arrive}</p>`;
+  else if (id==="verse") body = `<div class="card"><div class="ref">${v.ref}</div><p class="verse">${v.text}</p><p class="ask">${d.ask}</p></div>`;
+  else if (id==="pray") body = `<div class="card"><div class="ref">Say this, then add a name</div><p class="verse" style="font-size:22px">${d.prayer}</p></div><p class="fine">If you want your own words: ${d.pray[1]}</p>`;
+  else body = `<h1>${d.leaveTitle}</h1><p class="lede">${d.leave}</p><textarea placeholder="${d.placeholder}"></textarea>`;
+  const last = beat===BEATS.length-1;
+  $(`<div class="progress">${bars}</div><div class="timer">00:20 · ${labels[id]}</div>${body}<button class="primary" id="${last?"finish":"nextBeat"}">${last?d.finish:"Next"}</button>`);
+}
+function done(){
+  const d = door();
+  $(`<div class="done-mark">${d.done}</div><p class="lede">${d.doneLede}</p><button class="primary" data-go="home">Back to the week</button><button class="ghost" id="swap">Switch door</button>`);
+}
+document.getElementById("modeBtn").onclick = () => {};
+document.getElementById("soundBtn").onclick = () => {
+  soundOn = !soundOn;
+  document.getElementById("soundBtn").textContent = soundOn ? "Sound on" : "Sound off";
+  if (!soundOn) stopTone();
+  else if (screen === "session") playTone(BEATS[beat] || "arrive");
+};
+render();
+</script>
+</body>
+</html>
